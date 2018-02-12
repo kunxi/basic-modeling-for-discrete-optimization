@@ -15,4 +15,4 @@ constraint
 include "alldifferent.mzn";
 constraint alldifferent([S,E,V,N,P,A,C,R]);
 
-solve satisfy;
+solve maximize 10000 * V + 1000 * E + 100 * R + 10 * S + E;
