@@ -17,5 +17,7 @@ constraint              100 * C + 10 * A + O
            
 include "alldifferent.mzn";
 constraint alldifferent([C,A,O,Z,H,I,P,T,E,S]);
+constraint O == 0;
+constraint P = 3 * Z;
 
 solve satisfy;
