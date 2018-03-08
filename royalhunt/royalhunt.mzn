@@ -17,9 +17,10 @@ array[COURT] of var 0..m: horse;
 array[HORSE] of var 0..n: court;
 
 % bijection function
-constraint forall(i in COURT, j in HORSE)(
-  horse[i] = j <-> court[j] = i
+constraint forall(c in COURT, h in HORSE)(
+  horse[c] = h <-> court[h] = c
 );
+
 
 % court try to ride as many horses as possible.
 constraint sum([horse[x] > 0 | x in COURT]) = min(m, n);
@@ -42,7 +43,6 @@ constraint forall(i in COURT, j in COURT)(
   )
 );
 
-
 var int: penalty;
 constraint penalty = sum(i in HORSE, j in HORSE)(bool2int(not
   (
@@ -53,13 +53,13 @@ constraint penalty = sum(i in HORSE, j in HORSE)(bool2int(not
   )
 )) * 100;
 
-array[COURT] of var int: joy;
-constraint forall(i in COURT)(
-  joy[i] = if horse[i] > 0 then enjoy[i, horse[i]] else 0 endif
-);
+
 
 var int: obj;
-constraint obj = sum(joy) - penalty;
+constraint obj = sum(i in COURT)(
+  if horse[i] > 0 then enjoy[i, horse[i]] else 0 endif
+) - penalty;
 
 solve maximize obj;
+
 
