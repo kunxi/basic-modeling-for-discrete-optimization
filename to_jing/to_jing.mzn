@@ -26,29 +26,26 @@ set of int: STEP0 = 0..maxstep;
 var STEP: steps;
 array[ROW,COL] of var STEP0: visit; % which step do we visit position or 0 if not visited
 
+include "globals.mzn";
+
 % start at start position
 constraint visit[start_row,start_col] = 1;
 
 % only use steps moves
 constraint sum(r in ROW, c in COL)(visit[r,c] >= 1) <= steps;
+
 % reach Jin province
 constraint exists(r in ROW, c in COL)(Jin[r,c] /\ visit[r,c] >= 1);
 
-
 % visit at most one city
-constraint not exists(r1,r2 in ROW, c1,c2 in COL)
-                     ((r1 != r2 \/ c1 != c2) 
-                      /\ terrain[r1,c1] = C /\ terrain[r2,c2] = C 
-                      /\ visit[r1,c1] >= 1 /\ visit[r2,c2] >= 1); 
+constraint sum(r in ROW, c in COL)(visit[r,c] >= 1 /\ terrain[r,c] = C) <= 1;
 
 % cant enter Mountain
 constraint not exists(r in ROW, c in COL)(terrain[r,c] = M /\ visit[r,c] >= 1);
 
 % visit only one place in every step
-constraint forall(r1,r2 in ROW, c1,c2 in COL)
-                 (r1 != r2 \/ c1 != c2  
-                  -> (visit[r1,c1] = 0 
-                      \/ visit[r2,c2] != visit[r1,c1])); 
+constraint alldifferent_except_0([visit[r,c]| r in ROW, c in COL]);
+
 % steps form a path
 constraint forall(s in 1..steps-1)
                  (exists(r1, r2 in ROW, c1, c2 in COL)
@@ -60,6 +57,9 @@ constraint forall(r1,r2 in ROW, c1,c2 in COL)
                   visit[r1,c1] = 0 \/ visit[r2,c2] = 0 \/
                   abs(visit[r1,c1] - visit[r2,c2]) = 1);
 
+
+
+
 % not too much delay
 constraint time <= timelimit;
 var int: time = sum(r in ROW, c in COL)(delay[terrain[r,c]]*(visit[r,c] >= 1));
@@ -67,6 +67,7 @@ var int: time = sum(r in ROW, c in COL)(delay[terrain[r,c]]*(visit[r,c] >= 1));
 % minimize the number of soldiers traversed
 solve minimize obj;
 var int: obj = sum(r in ROW, c in COL)((visit[r,c] > 0)*soldier[r,c]);
+
                          
 
 array[TERRAIN] of string: ter = [".", "#", "^", "C", "~"];
