@@ -14,11 +14,11 @@ array[COURT,HORSE] of int: enjoy;
 include "globals.mzn";
 
 array[COURT] of var 0..m: horse;
-array[HORSE] of var 0..n: court;
+array[HORSE] of var 0..n: member;
 
 % bijection function
 constraint forall(c in COURT, h in HORSE)(
-  horse[c] = h <-> court[h] = c
+  horse[c] = h <-> member[h] = c
 );
 
 
@@ -47,8 +47,8 @@ var int: penalty;
 constraint penalty = sum(i in HORSE, j in HORSE)(bool2int(not
   (
     speed[i] > speed[j] -> (
-      court[i] = 0 \/
-      ability[ court[i] ] >= ability[ court[j] ]
+      member[i] = 0 \/
+      ability[ member[i] ] >= ability[ member[j] ]
     )
   )
 )) * 100;
@@ -61,5 +61,7 @@ constraint obj = sum(i in COURT)(
 ) - penalty;
 
 solve maximize obj;
+
+output ["horse = \(horse);" ++ "\nobj = \(obj);"];
 
 
