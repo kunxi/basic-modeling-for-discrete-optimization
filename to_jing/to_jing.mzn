@@ -34,30 +34,91 @@ constraint visit[start_row,start_col] = 1;
 % only use steps moves
 constraint sum(r in ROW, c in COL)(visit[r,c] >= 1) <= steps;
 
-% reach Jin province
-constraint exists(r in ROW, c in COL)(Jin[r,c] /\ visit[r,c] >= 1);
+% reach Jin province at the last step
+constraint forall(r in ROW, c in COL)(visit[r,c] = steps -> Jin[r,c]);
 
 % visit at most one city
 constraint sum(r in ROW, c in COL)(visit[r,c] >= 1 /\ terrain[r,c] = C) <= 1;
 
 % cant enter Mountain
-constraint not exists(r in ROW, c in COL)(terrain[r,c] = M /\ visit[r,c] >= 1);
+constraint forall(r in ROW, c in COL)(terrain[r,c] = M -> visit[r,c] = 0);
 
 % visit only one place in every step
 constraint alldifferent_except_0([visit[r,c]| r in ROW, c in COL]);
 
-% steps form a path
-constraint forall(s in 1..steps-1)
-                 (exists(r1, r2 in ROW, c1, c2 in COL)
-                        (abs(r1-r2) + abs(c1-c2) = 1 
-                         /\ visit[r1,c1] = s /\ visit[r2,c2] = s+1));
+% steps form a path: there exists the next step
+% 4 corners
+constraint let { var STEP0: s = visit[1,1]
+} in (s >= 1 /\ s < steps) -> (visit[1,2] = s + 1 \/ visit[2,1] = s + 1);
+
+constraint let { var STEP0: s = visit[nrow,1]
+} in (s >= 1 /\ s < steps) -> (visit[nrow,2] = s + 1 \/ visit[nrow-1,1] = s + 1);
+
+
+constraint let { var STEP0: s = visit[1,ncol]
+} in (s >= 1 /\ s < steps) -> (visit[1,ncol-1] = s + 1 \/ visit[2,ncol] = s + 1);
+
+constraint let { var STEP0: s = visit[nrow,ncol]
+} in (s >= 1 /\ s < steps) -> (visit[nrow-1,ncol] = s + 1 \/ visit[nrow, ncol-1] = s + 1);
+
+% 4 edges
+% North
+constraint forall(c in 2..ncol-1)
+  ( let { int: r = 1, var STEP0: s = visit[r,c]
+    } in (s >= 1 /\ s < steps) -> (
+      visit[r, c+1] = s + 1 \/
+      visit[r, c-1] = s + 1 \/
+      visit[r+1, c] = s + 1
+    )
+  );
+
+% South
+constraint forall(c in 2..ncol-1)
+  ( let { int: r = nrow, var STEP0: s = visit[r,c]
+    } in (s >= 1 /\ s < steps) -> (
+      visit[r, c+1] = s + 1 \/
+      visit[r, c-1] = s + 1 \/
+      visit[r-1, c] = s + 1
+    )
+  );
+
+% West
+constraint forall(r in 2..nrow-1)
+  ( let { int: c = 1, var STEP0: s = visit[r,c]
+    } in (s >= 1 /\ s < steps) -> (
+      visit[r+1, c] = s + 1 \/
+      visit[r-1, c] = s + 1 \/
+      visit[r, c+1] = s + 1
+    )
+  );
+
+% East
+constraint forall(r in 2..nrow-1)
+  ( let { int: c = ncol, var STEP0: s = visit[r,c]
+    } in (s >= 1 /\ s < steps) -> (
+      visit[r+1, c] = s + 1 \/
+      visit[r-1, c] = s + 1 \/
+      visit[r, c-1] = s + 1
+    )
+  );
+
+% Central field
+constraint forall(r in 2..nrow-1, c in 2..ncol-1)
+  ( let { var STEP0: s = visit[r,c]
+    } in (s >= 1 /\ s < steps) -> (
+      visit[r, c+1] = s + 1 \/
+      visit[r, c-1] = s + 1 \/
+      visit[r+1, c] = s + 1 \/
+      visit[r-1, c] = s + 1
+    )
+  );
+
+
 % no shortcuts
 constraint forall(r1,r2 in ROW, c1,c2 in COL)
                  (abs(r1-r2) + abs(c1-c2) = 1 ->
                   visit[r1,c1] = 0 \/ visit[r2,c2] = 0 \/
                   abs(visit[r1,c1] - visit[r2,c2]) = 1);
-
-
 
 
 % not too much delay
@@ -68,7 +129,7 @@ var int: time = sum(r in ROW, c in COL)(delay[terrain[r,c]]*(visit[r,c] >= 1));
 solve minimize obj;
 var int: obj = sum(r in ROW, c in COL)((visit[r,c] > 0)*soldier[r,c]);
 
-                         
+
 
 array[TERRAIN] of string: ter = [".", "#", "^", "C", "~"];
 
